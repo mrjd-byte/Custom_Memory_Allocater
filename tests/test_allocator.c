@@ -1,12 +1,28 @@
 #include "../include/allocator.h"
 #include <stdio.h>
 
-int main() {
-    struct block b;
-    b.size = 1024;
-    b.free = 0;
-    b.next = NULL;
+int main()
+{
+    int *ptr = my_malloc(sizeof(int));
 
-    printf("Block created");
-    printf("Size: %zu, Free: %d, Next: %p\n", b.size, b.free, (void*)b.next);
+    if(ptr == NULL)
+    {
+        printf("Allocation failed\n");
+        return 1;
+    }
+
+    *ptr = 42;
+    
+    printf("User pointer : %p\n", ptr);
+
+    struct block *header = (struct block *)ptr - 1;
+
+    printf("Header address: %p\n", header);
+
+    printf("Header size: %zu\n", header->size);
+    printf("Header free: %d\n", header->free);
+
+    printf("Distance: %ld bytes\n",
+           (char *)ptr - (char *)header);
+    return 0;
 }

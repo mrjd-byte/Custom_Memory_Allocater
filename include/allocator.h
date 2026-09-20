@@ -9,4 +9,6 @@ struct block {
     struct block *next;  
 };
 
+extern struct block *head;
+void *my_malloc(size_t size);
 #endif
