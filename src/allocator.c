@@ -19,6 +19,17 @@ void *my_malloc(size_t size) {
     block->size = size;
     block->free = 0;
     block->next = NULL;
+    
+    if (head == NULL) {
+        head = block;
+    } else {
+        struct block *current = head;
+        while (current->next !=NULL){
+            current = current->next;
+        }
+        current->next = block;
+    }
+
    
     return (void*)(block + 1); //move 24 bytes
 } 

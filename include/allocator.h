@@ -9,6 +9,7 @@ struct block {
     struct block *next;  
 };
 
-extern struct block *head;
-void *my_malloc(size_t size);
+extern struct block *head; //head exists
+void *my_malloc(size_t size); // Function to allocate memory exists
+
 #endif
