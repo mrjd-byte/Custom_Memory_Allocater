@@ -31,4 +31,14 @@ void *my_malloc(size_t size) {
 
    
     return (void*)(block + 1); //move 24 bytes
-} 
+}
+
+void my_free(void *ptr) {
+    if (ptr == NULL) {
+        return;
+    }
+
+    struct block *block = (struct block *)ptr - 1;
+
+    block->free = 1;
+}

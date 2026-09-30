@@ -11,5 +11,6 @@ struct block {
 
 extern struct block *head; //head exists
 void *my_malloc(size_t size); // Function to allocate memory exists
+void my_free(void *ptr); // Function to free memory exists
 
 #endif
