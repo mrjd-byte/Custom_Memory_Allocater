@@ -4,13 +4,14 @@
 int main()
 {
     int *a = my_malloc(100);
-    int *b = my_malloc(200);
-
-    printf("Before free : %d\n", head->free);
-    printf("Before free : %d\n", head->next->free);
+    printf("First address : %p\n", a);
     my_free(a);
-    printf("After free : %d\n", head->free);
-    my_free(b);
-    printf("Before free : %d\n", head->next->free);
+
+    int *b = my_malloc(50);
+    printf("Second address : %p\n", b);
+
+    printf("Size: %zu Free: %d\n", head->size, head->free);
+    
+    printf("Size: %zu Free: %d\n", head->next->size, head->next->free); //no output for this line, as head->next is NULL
     return 0;
 }

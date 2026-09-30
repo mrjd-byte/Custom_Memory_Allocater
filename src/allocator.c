@@ -6,8 +6,16 @@ struct block *head = NULL;
 void *my_malloc(size_t size) {
     size_t total_size;
     struct block *block;
-
+    
     total_size = size + sizeof(struct block);
+    block = find_free_block(size);
+
+    if (block != NULL) {
+        if (block != NULL) {
+            block->free = 0;
+            return (void*)(block + 1);
+        }
+    }
 
     block = sbrk(total_size);
 
@@ -41,4 +49,19 @@ void my_free(void *ptr) {
     struct block *block = (struct block *)ptr - 1;
 
     block->free = 1;
+}
+
+struct block *find_free_block(size_t size)
+{
+    struct block *current = head;
+
+    while(current != NULL) {
+        if(current->free == 1 && current->size >= size) {
+            return current;
+        }
+
+        current = current->next;
+    }
+
+    return NULL;
 }
