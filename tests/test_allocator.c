@@ -20,7 +20,7 @@ int main()
                (void *)current,
                current->size,
                current->free,
-               current->next);
+               current->next); 
         current = current->next;
     }
     return 0;

@@ -1,7 +1,6 @@
 #include "allocator.h"
 #include <unistd.h>
 
-
 struct block *head = NULL;
 
 void *my_malloc(size_t size) {
