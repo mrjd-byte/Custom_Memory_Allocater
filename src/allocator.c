@@ -33,6 +33,7 @@ void *my_malloc(size_t size)
     block->size = size;
     block->free = 0;
     block->next = NULL;
+    block->prev = NULL;
 
     if (head == NULL)
     {
@@ -46,6 +47,7 @@ void *my_malloc(size_t size)
             current = current->next;
         }
         current->next = block;
+        block->prev = current;
     }
 
     return (void *)(block + 1); // move 24 bytes
@@ -88,7 +90,14 @@ void split_block(struct block *block, size_t size)
     new_block->size = block->size - size - sizeof(struct block);
     new_block->free = 1;
     new_block->next = block->next;
+    new_block->prev = block;
 
-    block->size = size;
+    if (block->next != NULL)
+    {
+        block->next->prev = new_block;
+    }
+
     block->next = new_block;
+    block->size = size;
+
 }

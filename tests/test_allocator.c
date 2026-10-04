@@ -9,11 +9,12 @@ int main()
 
     int *b = my_malloc(50);
 
-    //print linkedlist
+    //print doulelinked list
     struct block *current = head;
     while (current != NULL)
     {
-        printf("Block size: %zu, Free: %d\n", current->size, current->free);
+        printf("Block size: %zu, free: %d\n", current->size, current->free);
+        printf("Prev: %p\n", (void *)current->prev);;
         current = current->next;
     }
 }

@@ -7,6 +7,7 @@ struct block {
     size_t size;
     int free;
     struct block *next;  
+    struct block *prev;
 };
 
 extern struct block *head; //head exists
