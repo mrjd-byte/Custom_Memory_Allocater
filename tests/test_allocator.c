@@ -4,14 +4,16 @@
 int main()
 {
     int *a = my_malloc(100);
-    printf("First address : %p\n", a);
-    my_free(a);
+    int *c = my_malloc(200);
+    my_free(c);
 
     int *b = my_malloc(50);
-    printf("Second address : %p\n", b);
 
-    printf("Size: %zu Free: %d\n", head->size, head->free);
-    
-    printf("Size: %zu Free: %d\n", head->next->size, head->next->free); //no output for this line, as head->next is NULL
-    return 0;
+    //print linkedlist
+    struct block *current = head;
+    while (current != NULL)
+    {
+        printf("Block size: %zu, Free: %d\n", current->size, current->free);
+        current = current->next;
+    }
 }
