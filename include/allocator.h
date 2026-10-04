@@ -17,5 +17,6 @@ struct block *find_free_block(size_t size); // Function to find a free block exi
 void split_block(struct block *block, size_t size); // Function to split a block exists
 void merge_blocks(struct block *block); // Function to merge blocks
 void *my_calloc(size_t count, size_t size); // Function to allocate and zero-initialize memory
+void *my_realloc(void *ptr, size_t size); // Function to reallocate memory
 
 #endif

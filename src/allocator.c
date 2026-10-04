@@ -143,3 +143,31 @@ void *my_calloc(size_t count, size_t size)
 
     return ptr;
 }
+
+void *my_realloc(void *ptr, size_t size)
+{
+    if(ptr == NULL)
+    {
+        return my_malloc(size);
+    }
+
+    struct block *block = (struct block *)ptr - 1;
+
+    if(block->size >= size)
+    {
+        return ptr;
+    }
+
+    void *new_ptr = my_malloc(size);
+
+    if(new_ptr == NULL)
+    {
+        return NULL;
+    }
+
+    memcpy(new_ptr, ptr, block->size);
+
+    my_free(ptr);
+
+    return new_ptr;
+}
