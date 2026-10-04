@@ -16,5 +16,6 @@ void my_free(void *ptr); // Function to free memory exists
 struct block *find_free_block(size_t size); // Function to find a free block exists
 void split_block(struct block *block, size_t size); // Function to split a block exists
 void merge_blocks(struct block *block); // Function to merge blocks
+void *my_calloc(size_t count, size_t size); // Function to allocate and zero-initialize memory
 
 #endif

@@ -1,5 +1,6 @@
 #include "allocator.h"
 #include <unistd.h>
+#include <string.h>
 
 struct block *head = NULL;
 
@@ -125,4 +126,20 @@ void merge_blocks(struct block *block)
     {
         next_block->next->prev = block;
     }
+}
+
+void *my_calloc(size_t count, size_t size)
+{
+    size_t total_size = count * size;
+
+    void *ptr = my_malloc(total_size);
+
+    if(ptr == NULL)
+    {
+        return NULL;
+    }
+
+    memset(ptr, 0, total_size);
+
+    return ptr;
 }
