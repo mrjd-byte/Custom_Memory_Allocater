@@ -63,6 +63,13 @@ void my_free(void *ptr)
     struct block *block = (struct block *)ptr - 1;
 
     block->free = 1;
+
+    merge_blocks(block);
+
+    if (block->prev != NULL)
+    {
+        merge_blocks(block->prev); 
+    }
 }
 
 struct block *find_free_block(size_t size)
@@ -86,7 +93,7 @@ void split_block(struct block *block, size_t size)
 {
     struct block *new_block;
 
-    new_block = (struct block *)((char *)(block + 1) + size);
+    new_block = (struct block *)((char *)block + sizeof(struct block) + size);
     new_block->size = block->size - size - sizeof(struct block);
     new_block->free = 1;
     new_block->next = block->next;
@@ -99,5 +106,23 @@ void split_block(struct block *block, size_t size)
 
     block->next = new_block;
     block->size = size;
+}
 
+void merge_blocks(struct block *block)
+{
+    struct block *next_block = block->next;
+
+    if (next_block == NULL || next_block->free == 0)
+    {
+        return;
+    }
+
+    block->size += sizeof(struct block) + next_block->size;
+
+    block->next = next_block->next;
+
+    if (next_block->next != NULL)
+    {
+        next_block->next->prev = block;
+    }
 }
