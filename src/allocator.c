@@ -1,6 +1,7 @@
 #include "allocator.h"
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
 #define ALIGNMENT 8
 
 size_t align_size(size_t size)
@@ -12,6 +13,11 @@ struct block *head = NULL;
 
 void *my_malloc(size_t size)
 {
+    if (size == 0)
+    {
+        return NULL;
+    }
+
     size = align_size(size);
     size_t total_size;
     struct block *block;
@@ -76,7 +82,7 @@ void my_free(void *ptr)
 
     if (block->prev != NULL)
     {
-        merge_blocks(block->prev); 
+        merge_blocks(block->prev);
     }
 }
 
@@ -137,11 +143,16 @@ void merge_blocks(struct block *block)
 
 void *my_calloc(size_t count, size_t size)
 {
+    if (count != 0 && size > SIZE_MAX / count)
+    {
+        return NULL;
+    }
+
     size_t total_size = count * size;
 
     void *ptr = my_malloc(total_size);
 
-    if(ptr == NULL)
+    if (ptr == NULL)
     {
         return NULL;
     }
@@ -153,19 +164,25 @@ void *my_calloc(size_t count, size_t size)
 
 void *my_realloc(void *ptr, size_t size)
 {
-    if(ptr == NULL)
+    if (size == 0)
+    {
+        my_free(ptr);
+        return NULL;
+    }
+    
+    if (ptr == NULL)
     {
         return my_malloc(size);
     }
 
     struct block *block = (struct block *)ptr - 1;
 
-    if(block->size >= size)
+    if (block->size >= size)
     {
         return ptr;
     }
-    
-    if(block->next != NULL && block->next->free == 1)
+
+    if (block->next != NULL && block->next->free == 1)
     {
         size_t total_size = block->size + sizeof(struct block) + block->next->size;
 
@@ -174,12 +191,12 @@ void *my_realloc(void *ptr, size_t size)
             merge_blocks(block);
             block->free = 0;
             return ptr;
-        }   
+        }
     }
 
     void *new_ptr = my_malloc(size);
 
-    if(new_ptr == NULL)
+    if (new_ptr == NULL)
     {
         return NULL;
     }

@@ -3,14 +3,24 @@
 
 int main()
 {
-    char *a = my_malloc(13);
+    void *a = my_malloc(0);
 
-    struct block *header = (struct block *)a - 1;
+    printf("malloc(0): %p\n", a);
 
-    printf("Requested: 13\n");
-    printf("Allocated: %zu\n", header->size);
 
-    printf("Address: %p\n", a);
+    void *b = my_realloc(NULL,100);
+
+    printf("realloc(NULL,100): %p\n", b);
+
+
+    b = my_realloc(b,0);
+
+    printf("realloc(ptr,0): %p\n", b);
+
+
+    void *c = my_calloc(100,100);
+
+    printf("calloc: %p\n", c);
 
     return 0;
 }
