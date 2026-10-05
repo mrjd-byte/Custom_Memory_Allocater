@@ -1,11 +1,18 @@
 #include "allocator.h"
 #include <unistd.h>
 #include <string.h>
+#define ALIGNMENT 8
+
+size_t align_size(size_t size)
+{
+    return (size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
+}
 
 struct block *head = NULL;
 
 void *my_malloc(size_t size)
 {
+    size = align_size(size);
     size_t total_size;
     struct block *block;
 

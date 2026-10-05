@@ -1,22 +1,16 @@
 #include "allocator.h"
 #include <stdio.h>
-#include <string.h>
 
 int main()
 {
-    char *a = my_malloc(100);
-    char *b = my_malloc(300);
+    char *a = my_malloc(13);
 
-    strcpy(a,"hello");
+    struct block *header = (struct block *)a - 1;
 
-    my_free(b);
+    printf("Requested: 13\n");
+    printf("Allocated: %zu\n", header->size);
 
-    printf("Before realloc: %p\n", a);
-
-    a = my_realloc(a,200);
-
-    printf("After realloc: %p\n", a);
-    printf("Data: %s\n", a);
+    printf("Address: %p\n", a);
 
     return 0;
 }
