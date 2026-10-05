@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #define ALIGNMENT 8
 
 size_t align_size(size_t size)
@@ -169,7 +170,7 @@ void *my_realloc(void *ptr, size_t size)
         my_free(ptr);
         return NULL;
     }
-    
+
     if (ptr == NULL)
     {
         return my_malloc(size);
@@ -206,4 +207,35 @@ void *my_realloc(void *ptr, size_t size)
     my_free(ptr);
 
     return new_ptr;
+}
+
+void print_heap()
+{
+    struct block *current = head;
+
+    printf("\n========== HEAP ==========\n");
+
+    while(current != NULL)
+    {
+        printf("Block Address : %p\n", (void *)current);
+        printf("Size          : %zu bytes\n", current->size);
+
+        if(current->free)
+        {
+            printf("Status        : FREE\n");
+        }
+        else
+        {
+            printf("Status        : USED\n");
+        }
+
+        printf("Prev          : %p\n", (void *)current->prev);
+        printf("Next          : %p\n", (void *)current->next);
+
+        printf("--------------------------\n");
+
+        current = current->next;
+    }
+
+    printf("==========================\n");
 }

@@ -18,5 +18,6 @@ void split_block(struct block *block, size_t size); // Function to split a block
 void merge_blocks(struct block *block); // Function to merge blocks
 void *my_calloc(size_t count, size_t size); // Function to allocate and zero-initialize memory
 void *my_realloc(void *ptr, size_t size); // Function to reallocate memory
+void print_heap();// Function to print the heap
 
 #endif

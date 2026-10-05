@@ -3,24 +3,22 @@
 
 int main()
 {
-    void *a = my_malloc(0);
+    int *a = my_malloc(100);
+    int *b = my_malloc(200);
+    int *c = my_malloc(300);
 
-    printf("malloc(0): %p\n", a);
-
-
-    void *b = my_realloc(NULL,100);
-
-    printf("realloc(NULL,100): %p\n", b);
+    print_heap();
 
 
-    b = my_realloc(b,0);
+    my_free(b);
 
-    printf("realloc(ptr,0): %p\n", b);
+    print_heap();
 
 
-    void *c = my_calloc(100,100);
+    my_free(c);
 
-    printf("calloc: %p\n", c);
+    print_heap();
+
 
     return 0;
 }
