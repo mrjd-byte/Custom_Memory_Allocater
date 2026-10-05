@@ -157,6 +157,18 @@ void *my_realloc(void *ptr, size_t size)
     {
         return ptr;
     }
+    
+    if(block->next != NULL && block->next->free == 1)
+    {
+        size_t total_size = block->size + sizeof(struct block) + block->next->size;
+
+        if (total_size >= size)
+        {
+            merge_blocks(block);
+            block->free = 0;
+            return ptr;
+        }   
+    }
 
     void *new_ptr = my_malloc(size);
 

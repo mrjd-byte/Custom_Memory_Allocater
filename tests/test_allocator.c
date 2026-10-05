@@ -4,15 +4,19 @@
 
 int main()
 {
-    char *name = my_malloc(10);
+    char *a = my_malloc(100);
+    char *b = my_malloc(300);
 
-    strcpy(name, "hello");
+    strcpy(a,"hello");
 
-    printf("Before realloc: %s\n", name);
+    my_free(b);
 
-    name = my_realloc(name, 20);
+    printf("Before realloc: %p\n", a);
 
-    printf("After realloc: %s\n", name);
+    a = my_realloc(a,200);
+
+    printf("After realloc: %p\n", a);
+    printf("Data: %s\n", a);
 
     return 0;
 }
