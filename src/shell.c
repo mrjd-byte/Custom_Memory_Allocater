@@ -62,6 +62,39 @@ void free_allocation(int id)
     printf("Allocation ID not found\n");
 }
 
+void realloc_allocation(int id, size_t size)
+{
+    for (int i = 0; i < allocation_count; i++)
+    {
+        if (allocations[i].id == id)
+        {
+            if (allocations[i].ptr == NULL)
+            {
+                printf("Block already freed\n");
+                return;
+            }
+
+            void *new_ptr = my_realloc(
+                allocations[i].ptr,
+                size);
+
+            if (new_ptr == NULL)
+            {
+                printf("Reallocation failed\n");
+                return;
+            }
+
+            allocations[i].ptr = new_ptr;
+
+            printf("Reallocated ID: %d\n", id);
+
+            return;
+        }
+    }
+
+    printf("Allocation ID not found\n");
+}
+
 int main()
 {
     char command[100];
@@ -155,6 +188,23 @@ int main()
             int id = atoi(id_str);
 
             free_allocation(id);
+        }
+
+        else if (strcmp(token, "realloc") == 0)
+        {
+            char *id_str = strtok(NULL, " ");
+            char *size_str = strtok(NULL, " ");
+
+            if (id_str == NULL || size_str == NULL)
+            {
+                printf("Usage: realloc <id> <size>\n");
+                continue;
+            }
+
+            int id = atoi(id_str);
+            size_t size = atoi(size_str);
+
+            realloc_allocation(id, size);
         }
 
         else
