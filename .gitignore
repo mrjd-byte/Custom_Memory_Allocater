@@ -1,0 +1,14 @@
+# Compiled binaries
+allocator
+test_malloc
+test_free
+test_split
+test_merge
+test_calloc
+test_realloc
+
+# Object files
+*.o
+
+# Debug files
+*.out
