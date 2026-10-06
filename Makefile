@@ -31,3 +31,12 @@ test_realloc:
 
 clean:
 	rm -f test_malloc test_free test_split test_merge test_calloc test_realloc
+
+
+test:
+	make test_malloc
+	make test_free
+	make test_split
+	make test_merge
+	make test_calloc
+	make test_realloc
