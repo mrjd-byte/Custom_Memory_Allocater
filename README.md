@@ -35,6 +35,7 @@ The allocator provides the following features based strictly on the codebase imp
 - **In-Place `realloc` Expansion**: Checks if the current block already satisfies the requested size or merges with an adjacent free block to prevent unnecessary data copying.
 - **Memory Alignment**: Enforces 8-byte payload alignment using bitwise masking.
 - **Heap Debugging Utility (`print_heap`)**: Diagnostic routine that prints the state of all blocks, addresses, sizes, and linked list pointers.
+- **Interactive Allocator Shell**: Dynamic command-line interface allowing users to issue allocation, deallocation, reallocation, and heap inspection commands in real time.
 - **Modular Test Suite**: Modular test suite verifying allocation, deallocation, block splitting, coalescing, calloc, and realloc behaviors.
 
 ---
@@ -411,15 +412,320 @@ The project includes dedicated test programs inside the `tests/` directory to va
 
 ---
 
+## Interactive Allocator Shell
+
+In addition to running predefined test files, the project includes an interactive command-line interface (CLI) that allows users to interact with the custom memory allocator dynamically in real time. Rather than relying solely on static, automated test runs, developers can issue arbitrary allocation, deallocation, and resizing commands on demand and immediately observe changes to heap layout and block metadata.
+
+### Overview
+
+The allocator shell acts as a user-facing interaction layer that sits above the core memory management subsystem. It translates terminal commands into direct custom allocator API calls while keeping the allocator implementation completely separated and decoupled.
+
+The execution flow between the user terminal and low-level heap management is structured as follows:
+
+```
+User Terminal
+        |
+        v
+Allocator Shell
+        |
+        v
+Custom Memory Allocator APIs
+(my_malloc, my_free, my_calloc, my_realloc)
+        |
+        v
+Heap Manager
+```
+
+#### Layer Separation and Architecture
+
+- **User Terminal & Shell Interface (`src/shell.c`)**:
+  - Provides a dynamic Read-Eval-Print Loop (REPL) using the `allocator> ` prompt.
+  - Parses user input strings and tokenizes command arguments (`strtok`).
+  - Maintains an internal session allocation table (`struct allocation_entry allocations[MAX_ALLOCATIONS]`) that maps user-friendly integer IDs (`1, 2, 3...`) to returned raw memory pointers.
+  - Guards against invalid operations (e.g., deallocating an unknown ID, double freeing an already-freed block, or storing `NULL` allocations) and formats diagnostic output.
+- **Custom Memory Allocator APIs (`include/allocator.h`, `src/allocator.c`)**:
+  - The shell interacts with the allocator strictly through its public C interface (`my_malloc`, `my_free`, `my_calloc`, `my_realloc`, and `print_heap`).
+  - The allocator implementation remains completely independent: it has no knowledge of the shell's tracking table, contains no UI code, and functions identically whether invoked by the interactive shell, automated unit tests, or external C programs.
+- **Heap Manager**:
+  - Manages low-level heap mechanisms, including 8-byte memory alignment (`align_size`), First Fit free list searching (`find_free_block`), block splitting (`split_block`), bidirectional coalescing (`merge_blocks`), intrusive metadata headers (`struct block`), and data segment expansion via `sbrk`.
+
+### Supported Commands
+
+The interactive shell supports the following commands:
+
+#### 1. malloc
+
+Allocates a block of memory of the specified byte size on the heap.
+
+**Usage:**
+```text
+malloc <size>
+```
+
+- **Parameters**:
+  - `<size>`: The number of bytes to allocate (e.g., `malloc 128`).
+- **Underlying API**: `my_malloc(size)`
+- **Behavior**:
+  - Aligns the requested `<size>` to an 8-byte boundary.
+  - Scans the doubly linked block list for an eligible free chunk using First Fit.
+  - If a suitable free block is found with sufficient excess capacity, it splits the block (`split_block`); otherwise, it expands the program break via `sbrk`.
+  - Records the returned pointer in the shell's tracking table and assigns it an auto-incrementing integer ID.
+- **Outputs**:
+  - Success: `Allocated ID: <id>`
+  - Failure: `Allocation failed` (if memory allocation returns `NULL`)
+  - Error: `Usage: malloc <size>` (if `<size>` argument is missing)
+  - Limit: `Allocation table full` (if maximum tracked allocations of 100 is reached)
+
+#### 2. calloc
+
+Allocates zero-initialized memory for an array of elements.
+
+**Usage:**
+```text
+calloc <count> <size>
+```
+
+- **Parameters**:
+  - `<count>`: Number of elements in the array (e.g., `calloc 5 32`).
+  - `<size>`: Size of each individual element in bytes.
+- **Underlying API**: `my_calloc(count, size)`
+- **Behavior**:
+  - Checks for integer multiplication overflow before attempting allocation.
+  - Allocates `count * size` bytes via `my_malloc`.
+  - Zero-initializes the entire payload region using `memset(ptr, 0, total_size)`.
+  - Records the allocated pointer in the session table and assigns an ID.
+- **Outputs**:
+  - Success: `Allocated ID: <id>`
+  - Failure: `Allocation failed`
+  - Error: `Usage: calloc <count> <size>` (if parameters are omitted)
+
+#### 3. realloc
+
+Resizes an active memory allocation to a new byte size.
+
+**Usage:**
+```text
+realloc <id> <size>
+```
+
+- **Parameters**:
+  - `<id>`: Integer ID corresponding to an active allocation entry (e.g., `realloc 1 256`).
+  - `<size>`: New requested payload size in bytes.
+- **Underlying API**: `my_realloc(ptr, size)`
+- **Behavior**:
+  - Validates that `<id>` exists and that the block has not already been freed.
+  - Invokes `my_realloc(ptr, size)`:
+    - Retains memory in-place if current block payload capacity is already sufficient.
+    - Merges with an adjacent free block in-place if combined capacity satisfies `<size>` (avoiding memory copies).
+    - Otherwise, allocates a new block, copies payload data via `memcpy`, frees the old block, and updates the table with the new pointer.
+- **Outputs**:
+  - Success: `Reallocated ID: <id>`
+  - Failure: `Reallocation failed`
+  - Error: `Block already freed` (if the block for `<id>` was previously freed)
+  - Error: `Allocation ID not found` (if `<id>` is invalid)
+  - Error: `Usage: realloc <id> <size>` (if parameters are missing)
+
+#### 4. free
+
+Deallocates the memory block associated with the given allocation ID.
+
+**Usage:**
+```text
+free <id>
+```
+
+- **Parameters**:
+  - `<id>`: Integer ID of the allocation to release (e.g., `free 1`).
+- **Underlying API**: `my_free(ptr)`
+- **Behavior**:
+  - Locates `<id>` in the allocation table.
+  - Checks that the block has not already been released (`ptr != NULL`).
+  - Calls `my_free(ptr)`, which marks the block header as free (`free = 1`) and performs immediate bidirectional coalescing (`merge_blocks`) with adjacent free blocks.
+  - Clears the pointer in the table (`ptr = NULL`) to prevent double freeing.
+- **Outputs**:
+  - Success: `Freed ID: <id>`
+  - Error: `Block already freed` (if attempting to free a block that has already been deallocated)
+  - Error: `Allocation ID not found` (if `<id>` does not exist in table)
+  - Error: `Usage: free <id>` (if `<id>` parameter is omitted)
+
+#### 5. heap
+
+Dumps the current physical layout and metadata headers of all memory blocks in the heap.
+
+**Usage:**
+```text
+heap
+```
+
+- **Parameters**: None.
+- **Underlying API**: `print_heap()`
+- **Behavior**:
+  - Traverses the heap's doubly linked list starting from `head`.
+  - Prints the raw block header address (`%p`), usable payload size, allocation status (`FREE` or `USED`), and neighboring node addresses (`prev` and `next`).
+- **Output Example**:
+  ```text
+  ========== HEAP ==========
+  Block Address : 0x5555555592a0
+  Size          : 128 bytes
+  Status        : USED
+  Prev          : (nil)
+  Next          : 0x555555559340
+  --------------------------
+  ==========================
+  ```
+
+#### 6. list
+
+Displays the status and pointer addresses of all tracked allocations in the current shell session.
+
+**Usage:**
+```text
+list
+```
+
+- **Parameters**: None.
+- **Underlying API**: Internal shell routine `list_allocations()`
+- **Behavior**:
+  - Iterates through the session's allocation table (`allocations[]`).
+  - Displays each entry's assigned ID, current status (`ACTIVE` or `FREED`), and memory pointer address (`%p`).
+  - If no allocations have been created, prints `No allocations`.
+- **Output Example**:
+  ```text
+  ========== ALLOCATIONS ==========
+
+  ID     : 1
+  Status : ACTIVE
+  Pointer: 0x5555555592b8
+  -------------------------------
+
+  ID     : 2
+  Status : FREED
+  -------------------------------
+  =================================
+  ```
+
+#### 7. exit
+
+Terminates the interactive allocator shell session.
+
+**Usage:**
+```text
+exit
+```
+
+- **Parameters**: None.
+- **Behavior**: Exits the command loop and returns cleanly.
+- **Output**: `Goodbye!`
+
+### Command Reference Table
+
+| Command | Syntax | Underlying API | Description |
+|---|---|---|---|
+| `malloc` | `malloc <size>` | `my_malloc(size)` | Allocates aligned memory block of `<size>` bytes. |
+| `calloc` | `calloc <count> <size>` | `my_calloc(count, size)` | Allocates zero-initialized memory for array elements. |
+| `realloc` | `realloc <id> <size>` | `my_realloc(ptr, size)` | Resizes active allocation `<id>` to `<size>` bytes. |
+| `free` | `free <id>` | `my_free(ptr)` | Deallocates allocation `<id>` and coalesces adjacent free blocks. |
+| `heap` | `heap` | `print_heap()` | Displays low-level block addresses, sizes, status, and list pointers. |
+| `list` | `list` | Internal session table | Lists session allocation IDs, active/freed states, and pointers. |
+| `exit` | `exit` | `exit(0)` / `break` | Exits the interactive shell session. |
+
+### Building and Running the Shell
+
+To compile and launch the interactive allocator shell:
+
+```bash
+# Build the shell binary
+make shell
+
+# Launch the interactive session
+./allocator_shell
+```
+
+### Example Interactive Session
+
+The following example demonstrates an interactive session showcasing allocation, heap inspection, deallocation, and automatic block coalescing:
+
+```text
+$ make shell
+gcc -Iinclude src/allocator.c src/shell.c -o allocator_shell
+
+$ ./allocator_shell
+===== Custom Memory Allocator Shell =====
+
+allocator> malloc 100
+Allocated ID: 1
+
+allocator> malloc 200
+Allocated ID: 2
+
+allocator> list
+
+========== ALLOCATIONS ==========
+
+ID     : 1
+Status : ACTIVE
+Pointer: 0x5555555592b8
+-------------------------------
+
+ID     : 2
+Status : ACTIVE
+Pointer: 0x555555559340
+-------------------------------
+=================================
+
+allocator> heap
+
+========== HEAP ==========
+Block Address : 0x5555555592a0
+Size          : 104 bytes
+Status        : USED
+Prev          : (nil)
+Next          : 0x555555559328
+--------------------------
+Block Address : 0x555555559328
+Size          : 200 bytes
+Status        : USED
+Prev          : 0x5555555592a0
+Next          : (nil)
+--------------------------
+==========================
+
+allocator> free 1
+Freed ID: 1
+
+allocator> free 2
+Freed ID: 2
+
+allocator> heap
+
+========== HEAP ==========
+Block Address : 0x5555555592a0
+Size          : 328 bytes
+Status        : FREE
+Prev          : (nil)
+Next          : (nil)
+--------------------------
+==========================
+
+allocator> exit
+Goodbye!
+```
+
+---
+
 ## 12. Building and Running
 
 The project includes a `Makefile` configured for GCC on POSIX/Linux environments (or WSL on Windows).
 
 ### Compilation Targets
 
-Compile any individual test:
+Compile the interactive shell or any individual test:
 
 ```bash
+# Build interactive shell
+make shell
+./allocator_shell
+
 # Build test_malloc
 make test_malloc
 ./test_malloc
