@@ -1,9 +1,12 @@
+.PHONY: test_malloc test_free test_split test_merge test_calloc test_realloc shell clean test
 CC = gcc
 
 CFLAGS = -Iinclude
 
 SRC = src/allocator.c
 
+shell:
+	$(CC) $(CFLAGS) $(SRC) src/shell.c -o allocator_shell
 
 test_malloc:
 	$(CC) $(CFLAGS) $(SRC) tests/test_malloc.c -o test_malloc

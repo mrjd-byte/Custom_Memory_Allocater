@@ -95,6 +95,37 @@ void realloc_allocation(int id, size_t size)
     printf("Allocation ID not found\n");
 }
 
+void list_allocations()
+{
+    printf("\n========== ALLOCATIONS ==========\n");
+
+    if (allocation_count == 0)
+    {
+        printf("No allocations\n");
+        printf("=================================\n");
+        return;
+    }
+
+    for (int i = 0; i < allocation_count; i++)
+    {
+        printf("\nID     : %d\n", allocations[i].id);
+
+        if (allocations[i].ptr == NULL)
+        {
+            printf("Status : FREED\n");
+        }
+        else
+        {
+            printf("Status : ACTIVE\n");
+            printf("Pointer: %p\n", allocations[i].ptr);
+        }
+
+        printf("-------------------------------\n");
+    }
+
+    printf("=================================\n");
+}
+
 int main()
 {
     char command[100];
@@ -123,6 +154,11 @@ int main()
         else if (strcmp(token, "heap") == 0)
         {
             print_heap();
+        }
+
+        else if (strcmp(token, "list") == 0)
+        {
+            list_allocations();
         }
 
         else if (strcmp(token, "malloc") == 0)
