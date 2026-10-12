@@ -140,6 +140,8 @@ void merge_blocks(struct block *block)
     {
         next_block->next->prev = block;
     }
+
+    block->free = 1;
 }
 
 void *my_calloc(size_t count, size_t size)
