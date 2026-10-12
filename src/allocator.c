@@ -81,7 +81,7 @@ void my_free(void *ptr)
 
     merge_blocks(block);
 
-    if (block->prev != NULL)
+    if (block->prev != NULL && block->prev->free == 1)
     {
         merge_blocks(block->prev);
     }
