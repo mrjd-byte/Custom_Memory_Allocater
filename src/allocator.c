@@ -7,6 +7,7 @@
 
 size_t align_size(size_t size)
 {
+    // Keep payloads aligned for predictable pointer access.
     return (size + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
 }
 
@@ -28,6 +29,7 @@ void *my_malloc(size_t size)
 
     if (block != NULL)
     {
+        // Reuse a free block, splitting off any usable remainder.
         if (block->size >= size + sizeof(struct block))
         {
             split_block(block, size);
@@ -65,7 +67,8 @@ void *my_malloc(size_t size)
         block->prev = current;
     }
 
-    return (void *)(block + 1); // move 24 bytes
+    // Return the payload immediately after the block metadata.
+    return (void *)(block + 1);
 }
 
 void my_free(void *ptr)
@@ -79,6 +82,7 @@ void my_free(void *ptr)
 
     block->free = 1;
 
+    // Coalesce adjacent free blocks to reduce fragmentation.
     merge_blocks(block);
 
     if (block->prev != NULL && block->prev->free == 1)
@@ -108,6 +112,7 @@ void split_block(struct block *block, size_t size)
 {
     struct block *new_block;
 
+    // Place the remainder after the resized payload and its metadata.
     new_block = (struct block *)((char *)block + sizeof(struct block) + size);
     new_block->size = block->size - size - sizeof(struct block);
     new_block->free = 1;
@@ -127,6 +132,7 @@ void merge_blocks(struct block *block)
 {
     struct block *next_block = block->next;
 
+    // Merge only with the immediately following free block.
     if (next_block == NULL || next_block->free == 0)
     {
         return;
@@ -182,6 +188,7 @@ void *my_realloc(void *ptr, size_t size)
 
     if (block->size >= size)
     {
+        // The current allocation already has enough space.
         return ptr;
     }
 
@@ -191,6 +198,7 @@ void *my_realloc(void *ptr, size_t size)
 
         if (total_size >= size)
         {
+            // Grow in place when the next block can be merged.
             merge_blocks(block);
             block->free = 0;
             return ptr;

@@ -15,6 +15,7 @@ struct allocation_entry allocations[MAX_ALLOCATIONS];
 
 int allocation_count = 0;
 
+// Track active allocator pointers by a shell-visible ID.
 void add_allocation(void *ptr)
 {
     if (ptr == NULL)
@@ -136,10 +137,12 @@ int main()
     {
         printf("\nallocator> ");
 
+        // Read one command line and remove its trailing newline.
         fgets(command, sizeof(command), stdin);
 
         command[strcspn(command, "\n")] = '\0';
 
+        // The first token identifies the requested shell operation.
         char *token = strtok(command, " ");
 
         if (token == NULL)
